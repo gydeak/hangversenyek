@@ -41,7 +41,7 @@ button.p{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weigh
 <body>
 <main>
 <h1>Hangverseny-látogatószám jelentése</h1>
-<p class="sub">Kultstat – jelentés a hangversenyt követő munkanapon belül</p>
+<p class="sub">Kultstat – jelentés a hangversenyt követő két munkanapon belül</p>
 <div class="demo">Bemutató oldal: az adatok nem kerülnek elküldésre, a jelentőkód a böngészőben készül.</div>
 
 <fieldset><legend>1. A hangverseny adatai</legend>
@@ -61,7 +61,8 @@ button.p{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weigh
 <div class="g" style="margin-top:12px">
 <div style="grid-column:1/-1"><label for="ad">Cím (az előre felajánlott helyszíneknél automatikus)</label><input id="ad" readonly placeholder="A helyszín kiválasztása után töltődik ki"></div>
 <div><label for="tp">Település típusa (az irányítószám alapján automatikus)</label><select id="tp"><option value="">–</option><option>Budapest</option><option>Városok</option><option>Községek</option></select></div>
-<div><label>&nbsp;</label><div class="dl" id="tpn"></div></div>
+<div><label for="cap">Helyszín max. befogadóképessége (fő)</label><input type="number" id="cap" min="1" inputmode="numeric"></div>
+<div style="grid-column:1/-1"><div class="dl" id="tpn"></div><div class="dl" id="capn"></div></div>
 </div>
 </fieldset>
 
@@ -141,7 +142,10 @@ function refresh(){
   $('tp').value=t;
   $('tpn').textContent=t?(AS.has(z)?'Ez az irányítószám több településhez is tartozik – kérjük, ellenőrizze.':'Forrás: Magyar Posta, KSH Helységnévtár (2026. február).'):'';
 }
-$('v').onchange=()=>{$('addr').classList.toggle('hide',$('v').value!=='_');refresh()};
+const CAP={"MüPa":1525,"Kodály Központ":1000};
+$('v').onchange=()=>{$('addr').classList.toggle('hide',$('v').value!=='_');refresh();
+  const v=$('v').value;$('cap').value=CAP[v]||'';
+  $('capn').textContent=CAP[v]?'A befogadóképesség tájékoztató adat (a fő hangversenyterem), szükség esetén módosítható, pl. kisebb teremnél.':v?'Ehhez a helyszínhez nincs tárolt adat – kérjük, adja meg a befogadóképességet.':''};
 ['zip','st','no'].forEach(i=>$(i).addEventListener('input',refresh));
 let orgs=[];
 function drawO(){
@@ -167,7 +171,7 @@ function hol(d){const y=d.getFullYear(),k=(m,n)=>d.getMonth()===m-1&&d.getDate()
   const e=easter(y),t=+new Date(y,d.getMonth(),d.getDate(),12);
   return [-2,1,50].some(o=>+new Date(y,e.getMonth(),e.getDate()+o,12)===t)}
 function isWork(d){return d.getDay()!==0&&d.getDay()!==6&&!hol(d)}
-function dlDate(s){const d=new Date(s+'T12:00:00');do{d.setDate(d.getDate()+1)}while(!isWork(d));return d}
+function dlDate(s){const d=new Date(s+'T12:00:00');let k=0;while(k<2){d.setDate(d.getDate()+1);if(isWork(d))k++}return d}
 function late(s){const t=new Date();t.setHours(12,0,0,0);const d=dlDate(s);let n=0;while(d<t){d.setDate(d.getDate()+1);if(isWork(d)&&d<=t)n++}return n}
 function nextWorkday(s){
   const d=dlDate(s);
@@ -193,17 +197,19 @@ $('go').onclick=()=>{
   if(!$('t').value)e.push('típus');
   const num=id=>{const x=$(id).value;return x!==''&&+x>=0?String(Math.round(+x)):null};
   const fz=num('fz'),nf=num('nf'),jb=num('jb');
+  const cap=num('cap');if(cap===null||+cap<1)e.push('helyszín befogadóképessége');
   if(fz===null)e.push('fizető nézők száma');
   if(nf===null)e.push('nem fizető nézők száma');
   if(jb===null)e.push('jegybevétel');
+  if(cap!==null&&+cap>=1&&fz!==null&&nf!==null&&+fz+ +nf>+cap)e.push('a nézők száma (fizető + nem fizető: '+(+fz + +nf)+') meghaladja a helyszín befogadóképességét ('+cap+')');
   if(e.length){$('err').textContent='Hiányzik vagy hibás: '+e.join(', ')+'.';$('out').classList.add('hide');return}
   $('err').textContent='';
   const dur=String(h*60+m);
-  const code=[d.replace(/-/g,'.'),v,$('ad').value,$('tp').value,dur,orgs.join(', '),perf.join(', '),$('t').value,
+  const code=[d.replace(/-/g,'.'),v,$('ad').value,$('tp').value,cap,dur,orgs.join(', '),perf.join(', '),$('t').value,
     'Ifjúsági-'+document.querySelector('input[name=y]:checked').value,
     'Kortárs-'+document.querySelector('input[name=k]:checked').value,fz,nf,jb,late(d)].join('; ');
   $('code').textContent=code;
-  const L=late(d);$('dl').textContent='Jelentési határidő: '+nextWorkday(d)+' (a hangversenyt követő munkanap). '+(L?'Késedelem: '+L+' munkanapnyi büntetésnap.':'Határidőn belül: 0 büntetésnap.');
+  const L=late(d);$('dl').textContent='Jelentési határidő: '+nextWorkday(d)+' (a hangversenyt követő 2. munkanap). '+(L?'Késedelem: '+L+' munkanapnyi büntetésnap.':'Határidőn belül: 0 büntetésnap.');
   $('out').classList.remove('hide');
 };
 $('cp').onclick=async()=>{

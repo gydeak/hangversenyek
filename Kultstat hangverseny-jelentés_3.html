@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kultstat hangverseny-jelentés</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mu:#6b6a64;--bd:#d9d7cf;--ac:#1f5f8b;--acx:#fff;--ok:#e7f3ea;--er:#b3261e;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171716;--card:#222220;--tx:#eeede8;--mu:#a09f97;--bd:#3a3a36;--ac:#6db3e0;--acx:#10202b;--ok:#1e2f24;--er:#f2928b}}
+:root[data-theme="dark"]{--bg:#171716;--card:#222220;--tx:#eeede8;--mu:#a09f97;--bd:#3a3a36;--ac:#6db3e0;--acx:#10202b;--ok:#1e2f24;--er:#f2928b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.5rem;margin:0 0 4px}
+.sub{color:var(--mu);margin:0 0 16px}
+.demo{font-size:.85rem;background:var(--card);border:1px dashed var(--bd);border-radius:8px;padding:8px 12px;margin-bottom:16px;color:var(--mu)}
+fieldset{background:var(--card);border:1px solid var(--bd);border-radius:12px;margin:0 0 14px;padding:14px 16px}
+legend{font-weight:600;padding:0 6px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+label{display:block;font-size:.85rem;color:var(--mu);margin-bottom:4px}
+input,select,button{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:9px 10px;width:100%}
+input:focus,select:focus{outline:2px solid var(--ac);outline-offset:1px}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{width:auto;flex:1}
+.row button{flex:0 0 auto}
+button{cursor:pointer}
+button.p{background:var(--ac);color:var(--acx);border-color:var(--ac);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--bg);border:1px solid var(--bd);border-radius:999px;padding:3px 6px 3px 12px;font-size:.85rem;display:flex;gap:6px;align-items:center}
+.chip b{cursor:pointer;color:var(--mu);padding:0 6px}
+.seg{display:flex;gap:8px}
+.seg label{flex:1;display:flex;gap:6px;align-items:center;border:1px solid var(--bd);border-radius:8px;padding:9px 10px;color:var(--tx);margin:0;cursor:pointer;background:var(--bg)}
+.seg input{width:auto}
+.hide{display:none}
+.err{color:var(--er);font-size:.85rem;min-height:1.2em;margin:4px 0}
+#out{background:var(--ok);border:1px solid var(--bd);border-radius:12px;padding:14px 16px}
+#code{font:600 .95rem/1.5 ui-monospace,Menlo,Consolas,monospace;word-break:break-word;margin:6px 0 10px}
+.dl{font-size:.9rem;color:var(--mu)}
+</style>
+</head>
+<body>
+<main>
+<h1>Hangverseny-látogatószám jelentése</h1>
+<p class="sub">Kultstat – jelentés a hangversenyt követő munkanapon belül</p>
+<div class="demo">Bemutató oldal: az adatok nem kerülnek elküldésre, a jelentőkód a böngészőben készül.</div>
+
+<fieldset><legend>1. A hangverseny adatai</legend>
+<div class="g">
+<div><label for="d">Dátum</label><input type="date" id="d"></div>
+<div><label for="v">Helyszín</label>
+<select id="v"><option value="">– válasszon –</option><option>MüPa</option><option>Zeneakadémia</option><option>Kodály Központ</option><option>Kölcsey Központ</option><option value="_">Egyéb helyszín (cím)…</option></select></div>
+<div>
+<label>Időtartam</label>
+<div class="row"><input type="number" id="h" min="0" max="12" placeholder="óra"><input type="number" id="m" min="0" max="59" placeholder="perc"></div></div>
+</div>
+<div id="addr" class="g hide" style="margin-top:12px">
+<div><label for="zip">Irányítószám</label><input id="zip" inputmode="numeric" maxlength="4" placeholder="1234"></div>
+<div><label for="st">Utca</label><input id="st" placeholder="Fő utca"></div>
+<div><label for="no">Házszám</label><input id="no" placeholder="12"></div>
+</div>
+<div class="g" style="margin-top:12px">
+<div style="grid-column:1/-1"><label for="ad">Cím (az előre felajánlott helyszíneknél automatikus)</label><input id="ad" readonly placeholder="A helyszín kiválasztása után töltődik ki"></div>
+<div><label for="tp">Település típusa (az irányítószám alapján automatikus)</label><select id="tp"><option value="">–</option><option>Budapest</option><option>Városok</option><option>Községek</option></select></div>
+<div><label>&nbsp;</label><div class="dl" id="tpn"></div></div>
+</div>
+</fieldset>
+
+<fieldset><legend>2. Szervező és előadók</legend>
+<label for="org">Szervező(k) hozzáadása – az első a fő szervező, ő jelent</label>
+<div class="row"><select id="org"></select><button type="button" id="oadd">Hozzáad</button></div>
+<div class="row" style="margin-top:8px"><input id="orgx" placeholder="Szabad input: azonosító vagy név (Enter; több is, vesszővel elválasztva)"><button type="button" id="oadd2">Hozzáad</button></div>
+<div class="chips" id="ochips"></div>
+<div style="margin-top:14px">
+<label for="pf">Előadó(k) hozzáadása</label>
+<div class="row"><select id="pf"></select><button type="button" id="padd">Hozzáad</button></div>
+<div class="row" style="margin-top:8px"><input id="pfx" placeholder="Szabad input: azonosító vagy név (Enter; több is, vesszővel elválasztva)"><button type="button" id="padd2">Hozzáad</button></div>
+<div class="chips" id="chips"></div>
+</div>
+</fieldset>
+
+<fieldset><legend>3. Típus</legend>
+<div class="g">
+<div><label for="t">Hangverseny típusa</label>
+<select id="t"><option value="">– válasszon –</option><option>Oratórium</option><option>Zenekari hangverseny</option><option>Énekkari hangverseny</option><option>Kamarazene</option><option>Hangszerszóló, ária, dalest</option><option>Vegyes</option></select></div>
+<div><label>Ifjúsági</label><div class="seg"><label><input type="radio" name="y" value="igen">igen</label><label><input type="radio" name="y" value="nem" checked>nem</label></div></div>
+<div><label>Kortárs</label><div class="seg"><label><input type="radio" name="k" value="igen">igen</label><label><input type="radio" name="k" value="nem" checked>nem</label></div></div>
+</div>
+</fieldset>
+
+<fieldset><legend>4. Nézőszám és bevétel</legend>
+<div class="g">
+<div><label for="fz">Fizető nézők (fő)</label><input type="number" id="fz" min="0" inputmode="numeric"></div>
+<div><label for="nf">Nem fizető nézők (fő)</label><input type="number" id="nf" min="0" inputmode="numeric"></div>
+<div><label for="jb">Jegybevétel (Ft)</label><input type="number" id="jb" min="0" inputmode="numeric"></div>
+</div>
+</fieldset>
+
+<div class="err" id="err"></div>
+<button type="button" class="p" id="go">Jelentőkód előállítása</button>
+
+<div id="out" class="hide" style="margin-top:16px">
+<strong>Jelentőkód</strong>
+<div id="code"></div>
+<div class="row"><button type="button" id="cp">Másolás</button></div>
+<p class="dl" id="dl"></p>
+</div>
+</main>
+<script>
+const ORGS=[["11855354","Pannon Filharmonikusok-Pécs Közhasznú Nonprofit Kft."],["10034765","Miskolci Szimfonikus Zenekar Nonprofit Kft."],["11858773","Szegedi Szimfonikus Zenekar"],["11857112","Budapesti Fesztiválzenekar Alapítvány"],["11859956","Óbudai Danubia Zenekar Nonprofit Kft."],["12044105","Magyar Rádió Művészeti Együttesei Nonprofit Kft."],["11982991","Concerto Akadémia Nonprofit Kft."],["11856434","MÁV Szimfonikusok Zenekari Alapítvány"],["10103478","MNF Magyar Nemzeti Filharmonikus Zenekar, Énekkar és Kottatár Nonprofit Kft."],["10103479","MNF Magyar Nemzeti Filharmonikus Zenekar"],["10103480","MNF Magyar Nemzeti Énekkar"],["11889331","Budafoki Dohnányi Ernő Szimfonikus Zenekar Közhasznú Nonprofit Kft."],["11855938","Győri Filharmonikus Zenekar"],["11984838","Kodály Filharmónia Debrecen"],["11859815","Kodály Filharmonikusok Debrecen"],["11986081","Kodály Kórus Debrecen"],["11858917","Savaria Szimfonikus Zenekar"]];
+const $=id=>document.getElementById(id);
+const opts='<option value="">– válasszon –</option>'+ORGS.map(o=>`<option value="${o[0]}">${o[0]} – ${o[1]}</option>`).join('');
+$('org').innerHTML=opts;
+$('pf').innerHTML=opts;
+let perf=[];
+function draw(){
+  $('chips').innerHTML='';
+  perf.forEach((p,i)=>{
+    const n=(ORGS.find(o=>o[0]===p)||[0,''])[1];
+    const c=document.createElement('span');c.className='chip';
+    c.textContent=p+(n?' – '+n.split(' ').slice(0,2).join(' '):'');
+    const b=document.createElement('b');b.textContent='×';b.title='Törlés';
+    b.onclick=()=>{perf.splice(i,1);draw()};
+    c.appendChild(b);$('chips').appendChild(c);
+  });
+}
+function add(v){(v||'').split(/[,;]/).map(x=>x.trim()).filter(x=>x&&!perf.includes(x)).forEach(x=>perf.push(x));draw()}
+$('pfx').addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();$('padd2').click()}});
+$('padd').onclick=()=>{add($('pf').value);$('pf').value=''};
+$('padd2').onclick=()=>{add($('pfx').value);$('pfx').value=''};
+const VEN={"MüPa":"1095 Budapest, Komor Marcell utca 1.","Zeneakadémia":"1061 Budapest, Liszt Ferenc tér 8.","Kodály Központ":"7622 Pécs, Breuer Marcell sétány 4.","Kölcsey Központ":"4026 Debrecen, Hunyadi utca 1–3."};
+/* Magyar Posta irányítószámok + KSH Helységnévtár (2026. febr.): városi jogállású (megyei jogú városokkal) települések irányítószámai; 1xxx = Budapest */
+const CS=new Set("2000 2011 2013 2025 2026 2030 2040 2045 2049 2051 2060 2072 2081 2085 2092 2100 2112 2117 2119 2120 2131 2132 2143 2144 2145 2151 2162 2170 2194 2200 2220 2225 2230 2234 2241 2300 2310 2314 2315 2316 2330 2336 2340 2360 2364 2367 2370 2371 2373 2377 2400 2407 2440 2451 2453 2457 2459 2462 2481 2483 2484 2485 2490 2500 2508 2509 2510 2534 2536 2541 2600 2626 2628 2651 2660 2700 2721 2730 2738 2740 2750 2760 2766 2800 2835 2840 2870 2879 2890 2900 2903 2921 2941 2943 3000 3021 3022 3024 3035 3060 3065 3070 3078 3082 3100 3102 3104 3109 3141 3170 3200 3221 3232 3233 3250 3300 3346 3351 3360 3384 3390 3400 3432 3433 3441 3450 3500 3501 3508 3515 3516 3517 3518 3519 3521 3524 3525 3526 3527 3528 3529 3530 3531 3532 3533 3534 3535 3558 3561 3562 3571 3580 3600 3604 3621 3625 3630 3651 3661 3662 3671 3672 3700 3733 3752 3770 3780 3783 3792 3800 3860 3881 3895 3900 3902 3910 3944 3945 3950 3973 3980 3988 3994 4000 4002 4024 4025 4026 4027 4028 4029 4030 4031 4032 4033 4034 4042 4060 4063 4066 4074 4078 4079 4080 4085 4086 4087 4090 4100 4110 4130 4138 4150 4181 4183 4200 4220 4224 4225 4233 4242 4243 4244 4246 4251 4252 4253 4254 4281 4283 4287 4300 4320 4326 4355 4361 4371 4400 4405 4431 4432 4433 4440 4447 4450 4461 4465 4481 4484 4485 4492 4501 4516 4524 4551 4561 4562 4564 4600 4625 4644 4700 4765 4800 4803 4804 4900 5000 5008 5052 5071 5085 5100 5123 5126 5130 5137 5152 5200 5212 5213 5231 5241 5300 5310 5331 5340 5349 5350 5358 5359 5400 5420 5430 5435 5440 5449 5461 5500 5502 5510 5516 5520 5525 5530 5540 5553 5600 5623 5630 5650 5661 5666 5671 5700 5711 5720 5742 5752 5800 5820 5830 5900 5903 5904 5905 5920 5940 6000 6008 6041 6044 6050 6060 6062 6070 6080 6087 6090 6100 6120 6200 6230 6237 6300 6320 6344 6400 6422 6430 6440 6449 6500 6503 6600 6630 6640 6648 6700 6710 6720 6721 6722 6723 6724 6725 6726 6727 6728 6729 6753 6757 6760 6762 6771 6782 6791 6800 6805 6806 6900 6903 6913 7000 7003 7018 7019 7020 7027 7030 7064 7081 7090 7100 7130 7131 7140 7150 7187 7200 7275 7300 7342 7355 7370 7400 7451 7500 7530 7557 7561 7570 7600 7621 7622 7623 7624 7625 7626 7627 7628 7629 7630 7631 7632 7633 7634 7635 7636 7639 7691 7693 7700 7714 7715 7720 7754 7761 7773 7800 7815 7900 7940 7960 8000 8019 8053 8060 8083 8100 8127 8130 8131 8154 8174 8175 8181 8182 8184 8200 8220 8230 8257 8258 8261 8297 8300 8330 8360 8380 8400 8411 8412 8420 8440 8447 8448 8451 8460 8500 8511 8591 8598 8600 8621 8623 8630 8638 8640 8660 8691 8693 8700 8709 8714 8749 8761 8785 8789 8790 8795 8800 8808 8809 8831 8840 8868 8900 8904 8960 8966 8999 9000 9011 9012 9019 9021 9022 9023 9024 9025 9026 9027 9028 9029 9030 9090 9100 9155 9167 9168 9200 9241 9242 9300 9330 9339 9343 9400 9407 9408 9431 9433 9444 9494 9500 9541 9545 9600 9608 9609 9653 9700 9707 9730 9735 9737 9740 9751 9800 9900 9909 9941 9955 9970 9981".split(' '));
+const AS=new Set("2660 2943 3346 3752 3780 3881 3994 4625 4765 7370 7400 7530 7561 7639 7720 7761 7773 7800 7900 7940 7960 8300 8591 8660 8693 8700 8714 8761 8785 8840 8868 8960 8999 9167 9168 9343 9909 9941".split(' '));
+function typ(z){if(!/^\d{4}$/.test(z))return'';if(z[0]==='1')return'Budapest';return CS.has(z)?'Városok':'Községek'}
+function refresh(){
+  const v=$('v').value;let a='';
+  if(v==='_')a=[$('zip').value.trim(),$('st').value.trim(),$('no').value.trim()].filter(Boolean).join(', ');
+  else a=VEN[v]||'';
+  $('ad').value=a;
+  const z=(a.match(/^\d{4}/)||[''])[0],t=typ(z);
+  $('tp').value=t;
+  $('tpn').textContent=t?(AS.has(z)?'Ez az irányítószám több településhez is tartozik – kérjük, ellenőrizze.':'Forrás: Magyar Posta, KSH Helységnévtár (2026. február).'):'';
+}
+$('v').onchange=()=>{$('addr').classList.toggle('hide',$('v').value!=='_');refresh()};
+['zip','st','no'].forEach(i=>$(i).addEventListener('input',refresh));
+let orgs=[];
+function drawO(){
+  $('ochips').innerHTML='';
+  orgs.forEach((p,i)=>{
+    const n=(ORGS.find(o=>o[0]===p)||[0,''])[1];
+    const c=document.createElement('span');c.className='chip';
+    const t=document.createElement('span');
+    t.textContent=(i===0?'★ fő: ':'')+p+(n?' – '+n.split(' ').slice(0,2).join(' '):'');
+    if(i>0){t.style.cursor='pointer';t.title='Kattintás: legyen ő a fő szervező';t.onclick=()=>{orgs.unshift(orgs.splice(i,1)[0]);drawO()}}
+    const b=document.createElement('b');b.textContent='×';b.title='Törlés';
+    b.onclick=()=>{orgs.splice(i,1);drawO()};
+    c.appendChild(t);c.appendChild(b);$('ochips').appendChild(c);
+  });
+}
+function addO(v){(v||'').split(/[,;]/).map(x=>x.trim()).filter(x=>x&&!orgs.includes(x)).forEach(x=>orgs.push(x));drawO()}
+$('orgx').addEventListener('keydown',ev=>{if(ev.key==='Enter'){ev.preventDefault();$('oadd2').click()}});
+$('oadd').onclick=()=>{addO($('org').value);$('org').value=''};
+$('oadd2').onclick=()=>{addO($('orgx').value);$('orgx').value=''};
+function easter(y){const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),n=h+l-7*m+114;return new Date(y,Math.floor(n/31)-1,n%31+1,12)}
+function hol(d){const y=d.getFullYear(),k=(m,n)=>d.getMonth()===m-1&&d.getDate()===n;
+  if(k(1,1)||k(3,15)||k(5,1)||k(8,20)||k(10,23)||k(11,1)||k(12,25)||k(12,26)||(y>=2025&&k(12,24)))return true;
+  const e=easter(y),t=+new Date(y,d.getMonth(),d.getDate(),12);
+  return [-2,1,50].some(o=>+new Date(y,e.getMonth(),e.getDate()+o,12)===t)}
+function isWork(d){return d.getDay()!==0&&d.getDay()!==6&&!hol(d)}
+function dlDate(s){const d=new Date(s+'T12:00:00');do{d.setDate(d.getDate()+1)}while(!isWork(d));return d}
+function late(s){const t=new Date();t.setHours(12,0,0,0);const d=dlDate(s);let n=0;while(d<t){d.setDate(d.getDate()+1);if(isWork(d)&&d<=t)n++}return n}
+function nextWorkday(s){
+  const d=dlDate(s);
+  return d.toLocaleDateString('hu-HU',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+}
+$('go').onclick=()=>{
+  addO($('orgx').value);$('orgx').value='';addO($('org').value);$('org').value='';
+  add($('pfx').value);$('pfx').value='';add($('pf').value);$('pf').value='';
+  const e=[];
+  const d=$('d').value;
+  if(!d)e.push('dátum');
+  let v=$('v').value;
+  if(v==='_'){
+    const z=$('zip').value.trim(),s=$('st').value.trim(),n=$('no').value.trim();
+    if(!/^\d{4}$/.test(z)||!s||!n)e.push('teljes cím (irányítószám, utca, házszám)');
+    v=`${z}, ${s}, ${n}`;
+  }else if(!v)e.push('helyszín');
+  if(!$('tp').value)e.push('település típusa');
+  const h=parseInt($('h').value||'0',10),m=parseInt($('m').value||'0',10);
+  if(!(h||m))e.push('időtartam');
+  if(!orgs.length)e.push('legalább egy szervező');
+  if(!perf.length)e.push('legalább egy előadó');
+  if(!$('t').value)e.push('típus');
+  const num=id=>{const x=$(id).value;return x!==''&&+x>=0?String(Math.round(+x)):null};
+  const fz=num('fz'),nf=num('nf'),jb=num('jb');
+  if(fz===null)e.push('fizető nézők száma');
+  if(nf===null)e.push('nem fizető nézők száma');
+  if(jb===null)e.push('jegybevétel');
+  if(e.length){$('err').textContent='Hiányzik vagy hibás: '+e.join(', ')+'.';$('out').classList.add('hide');return}
+  $('err').textContent='';
+  const dur=String(h*60+m);
+  const code=[d.replace(/-/g,'.'),v,$('ad').value,$('tp').value,dur,orgs.join(', '),perf.join(', '),$('t').value,
+    'Ifjúsági-'+document.querySelector('input[name=y]:checked').value,
+    'Kortárs-'+document.querySelector('input[name=k]:checked').value,fz,nf,jb,late(d)].join('; ');
+  $('code').textContent=code;
+  const L=late(d);$('dl').textContent='Jelentési határidő: '+nextWorkday(d)+' (a hangversenyt követő munkanap). '+(L?'Késedelem: '+L+' munkanapnyi büntetésnap.':'Határidőn belül: 0 büntetésnap.');
+  $('out').classList.remove('hide');
+};
+$('cp').onclick=async()=>{
+  try{await navigator.clipboard.writeText($('code').textContent);$('cp').textContent='Másolva ✓'}
+  catch(x){const r=document.createRange();r.selectNodeContents($('code'));const s=getSelection();s.removeAllRanges();s.addRange(r);$('cp').textContent='Jelölje ki és másolja (Ctrl+C)'}
+  setTimeout(()=>$('cp').textContent='Másolás',2500);
+};
+</script>
+</body>
+</html>
